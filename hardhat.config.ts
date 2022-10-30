@@ -3,10 +3,12 @@ import '@typechain/hardhat';
 import '@nomiclabs/hardhat-waffle';
 
 import deployer from './.secret';
+require("dotenv").config();
 
 // const BSC_RPC = 'https://bsc-dataseed.binance.org/';
 const BSC_RPC = 'https://bsc-dataseed1.defibit.io/';
 const BSC_Tetsnet_RPC = 'https://data-seed-prebsc-1-s1.binance.org:8545/';
+const BSC_ENDPOINT = process.env.BSC_ENDPOINT;
 
 const config: HardhatUserConfig = {
   solidity: { version: '0.7.6' },
@@ -27,7 +29,7 @@ const config: HardhatUserConfig = {
       accounts: [deployer.private],
     },
     bsc: {
-      url: BSC_RPC,
+      url: BSC_ENDPOINT, // url: BSC_RPC
       chainId: 0x38,
       accounts: [deployer.private],
     },
