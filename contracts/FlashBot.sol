@@ -19,6 +19,13 @@ struct OrderedReserves {
     uint256 b2;
 }
 
+struct Adjustments {
+    address adjustmentPool; // target adjusted pairAddress
+    address adjustmentToken; // target token address for adjustment
+    uint256 adjustment0;
+    uint256 adjustment1;
+}   
+
 struct ArbitrageInfo {
     address baseToken;
     address quoteToken;
@@ -141,6 +148,7 @@ contract FlashBot is Ownable {
     function getOrderedReserves(
         address pool0,
         address pool1,
+        Adjustments memory adj,
         bool baseTokenSmaller
     )
         internal
@@ -153,6 +161,23 @@ contract FlashBot is Ownable {
     {
         (uint256 pool0Reserve0, uint256 pool0Reserve1, ) = IUniswapV2Pair(pool0).getReserves();
         (uint256 pool1Reserve0, uint256 pool1Reserve1, ) = IUniswapV2Pair(pool1).getReserves();
+
+        if (pool0 == adj.adjustmentPool) {
+            if (adj.adjustmentToken == IUniswapV2Pair(pool0).token0()) {
+                pool0Reserve0 -= adj.adjustment0;
+                pool0Reserve1 += adj.adjustment1;
+            } else {
+                pool0Reserve1 -= adj.adjustment0;
+                pool0Reserve0 += adj.adjustment1;
+        } else if (pool1 == adj.adjustmentPool) {
+            if (adj.adjustmentToken == IUniswapV2Pair(pool1).token0()) {
+                pool1Reserve0 -= adj.adjustment0;
+                pool1Reserve1 += adj.adjustment1;
+            } else {
+                pool1Reserve1 -= adj.adjustment0;
+                pool1Reserve0 += adj.adjustment1;
+            }
+        }
 
         // Calculate the price denominated in quote asset token
         (Decimal.D256 memory price0, Decimal.D256 memory price1) =
@@ -250,11 +275,16 @@ contract FlashBot is Ownable {
     }
 
     /// @notice Calculate how much profit we can by arbitraging between two pools
-    function getProfit(address pool0, address pool1) external view returns (uint256 profit, address baseToken) {
+    function getProfit(address pool0, address pool1, address adjustedpair, address adjustedtoken, uint256 adjustment0, uint256 adjustment1) external view returns (uint256 profit, address baseToken) {
         (bool baseTokenSmaller, , ) = isbaseTokenSmaller(pool0, pool1);
         baseToken = baseTokenSmaller ? IUniswapV2Pair(pool0).token0() : IUniswapV2Pair(pool0).token1();
 
-        (, , OrderedReserves memory orderedReserves) = getOrderedReserves(pool0, pool1, baseTokenSmaller);
+        Adjustments memory adj;
+        adj.adjustmentPool = adjustedpair;
+        adj.adjustmentToken = adjustedtoken;
+        adj.adjustment0 = adjustment0;
+        adj.adjustment1 = adjustment1;
+        (, , OrderedReserves memory orderedReserves) = getOrderedReserves(pool0, pool1, adj, baseTokenSmaller);
 
         uint256 borrowAmount = calcBorrowAmount(orderedReserves);
         // borrow quote token on lower price pool,
