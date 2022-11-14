@@ -169,6 +169,7 @@ contract FlashBot is Ownable {
             } else {
                 pool0Reserve1 -= adj.adjustment0;
                 pool0Reserve0 += adj.adjustment1;
+            }
         } else if (pool1 == adj.adjustmentPool) {
             if (adj.adjustmentToken == IUniswapV2Pair(pool1).token0()) {
                 pool1Reserve0 -= adj.adjustment0;
@@ -205,12 +206,18 @@ contract FlashBot is Ownable {
 
     /// @notice Do an arbitrage between two Uniswap-like AMM pools
     /// @dev Two pools must contains same token pair
-    function flashArbitrage(address pool0, address pool1) external {
+    function flashArbitrage(address pool0, address pool1, address adjustedpair, address adjustedtoken, uint256 adjustment0, uint256 adjustment1) external {
         ArbitrageInfo memory info;
         (info.baseTokenSmaller, info.baseToken, info.quoteToken) = isbaseTokenSmaller(pool0, pool1);
 
+        Adjustments memory adj;
+        adj.adjustmentPool = adjustedpair;
+        adj.adjustmentToken = adjustedtoken;
+        adj.adjustment0 = adjustment0;
+        adj.adjustment1 = adjustment1;
+
         OrderedReserves memory orderedReserves;
-        (info.lowerPool, info.higherPool, orderedReserves) = getOrderedReserves(pool0, pool1, info.baseTokenSmaller);
+        (info.lowerPool, info.higherPool, orderedReserves) = getOrderedReserves(pool0, pool1, adj, info.baseTokenSmaller);
 
         // this must be updated every transaction for callback origin authentication
         permissionedPairAddress = info.lowerPool;

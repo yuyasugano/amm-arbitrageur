@@ -34,8 +34,11 @@
     "@types/lodash": "^4.14.168",
     "async-lock": "^1.2.8",
     "axios": "^0.21.1",
+    "bnc-sdk": "^4.6.0",
     "lodash": "^4.17.21",
     "lodash.combinations": "^18.10.0",
-    "winston": "^3.3.3"
+    "web3": "^1.8.1",
+    "winston": "^3.3.3",
+    "ws": "^8.11.0"
   }
 }
